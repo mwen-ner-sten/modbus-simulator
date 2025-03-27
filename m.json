@@ -1,0 +1,64 @@
+{
+    "registers": [
+        {
+            "address": 0,
+            "name": "",
+            "value": 0,
+            "data_type": "UINT16",
+            "register_type": "HOLDING_REGISTER",
+            "enabled": true,
+            "error_behavior": "NORMAL",
+            "description": "",
+            "scaling_factor": 1.0,
+            "offset": 0.0,
+            "unit": "",
+            "word_order": "BIG",
+            "byte_order": "BIG"
+        },
+        {
+            "address": 1,
+            "name": "",
+            "value": 0,
+            "data_type": "UINT16",
+            "register_type": "HOLDING_REGISTER",
+            "enabled": true,
+            "error_behavior": "NORMAL",
+            "description": "",
+            "scaling_factor": 1.0,
+            "offset": 0.0,
+            "unit": "",
+            "word_order": "BIG",
+            "byte_order": "BIG"
+        },
+        {
+            "address": 2,
+            "name": "",
+            "value": 0,
+            "data_type": "UINT16",
+            "register_type": "HOLDING_REGISTER",
+            "enabled": true,
+            "error_behavior": "NORMAL",
+            "description": "",
+            "scaling_factor": 1.0,
+            "offset": 0.0,
+            "unit": "",
+            "word_order": "BIG",
+            "byte_order": "BIG"
+        },
+        {
+            "address": 3,
+            "name": "",
+            "value": 0,
+            "data_type": "UINT16",
+            "register_type": "HOLDING_REGISTER",
+            "enabled": true,
+            "error_behavior": "NORMAL",
+            "description": "",
+            "scaling_factor": 1.0,
+            "offset": 0.0,
+            "unit": "",
+            "word_order": "BIG",
+            "byte_order": "BIG"
+        }
+    ]
+}
