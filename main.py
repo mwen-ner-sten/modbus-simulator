@@ -1,13 +1,49 @@
 """
-main.py - Main entry point for the Modbus simulator application
+main.py - Main entry point for the Modbus tools application
 """
 
 import sys
 import logging
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QMetaType
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout
 
-from ui import MainWindow
+from ui import MainWindow as SimulatorWindow
+from scanner import ModbusScanner
+
+
+class MainWindow(QMainWindow):
+    """
+    Main window that contains both the simulator and scanner
+    """
+    
+    def __init__(self):
+        super().__init__()
+        self.init_ui()
+        
+    def init_ui(self):
+        """
+        Initialize the user interface
+        """
+        self.setWindowTitle("Modbus Tools")
+        self.setGeometry(100, 100, 1200, 800)
+        
+        # Create central widget and main layout
+        central_widget = QWidget()
+        main_layout = QVBoxLayout()
+        
+        # Create tab widget
+        self.tabs = QTabWidget()
+        
+        # Add simulator tab
+        self.simulator = SimulatorWindow()
+        self.tabs.addTab(self.simulator, "Simulator")
+        
+        # Add scanner tab
+        self.scanner = ModbusScanner()
+        self.tabs.addTab(self.scanner, "Scanner")
+        
+        main_layout.addWidget(self.tabs)
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
 
 
 def setup_logging():
@@ -23,36 +59,12 @@ def setup_logging():
 
 def main():
     """
-    Main application entry point
+    Main entry point
     """
-    # Set up logging
     setup_logging()
-
-    # Create application
     app = QApplication(sys.argv)
-
-    # Fix QTextCursor threading issue
-    # Different versions of PyQt5 have different ways to register types
-    # Try multiple approaches to handle different PyQt versions
-    try:
-        # For newer versions of PyQt5
-        QMetaType.registerType("QTextCursor")
-    except AttributeError:
-        try:
-            # For older versions of PyQt5
-            from PyQt5.QtCore import qRegisterMetaType
-
-            qRegisterMetaType("QTextCursor")
-        except (ImportError, AttributeError):
-            logging.warning(
-                "Could not register QTextCursor meta type. Threading-related issues might occur."
-            )
-
-    # Create and show main window
     window = MainWindow()
     window.show()
-
-    # Run application
     sys.exit(app.exec_())
 
 
