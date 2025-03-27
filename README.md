@@ -47,7 +47,3 @@ The simulator can be configured through the graphical interface:
 2. Configure error behaviors for testing
 3. Set up scaling factors and offsets
 4. Configure communication settings (TCP/RTU)
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
