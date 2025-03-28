@@ -25,25 +25,25 @@ class MainWindow(QMainWindow):
     """
     Main window of the application
     """
-    
+
     def __init__(self):
         super().__init__()
         logger.debug("Initializing MainWindow")
         self.setWindowTitle("Modbus Simulator")
         self.setGeometry(100, 100, 800, 600)
         self.init_ui()
-        
+
     def init_ui(self):
         """
         Initialize the user interface
         """
         logger.debug("Setting up UI")
-        
+
         # Create central widget and layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
-        
+
         # Create tab widget
         tabs = QTabWidget()
         layout.addWidget(tabs)
