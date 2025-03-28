@@ -13,6 +13,7 @@ from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 import asyncio
 import signal
 import sys
+from twisted.internet import reactor
 
 # Set up logger for this module
 logger = logging.getLogger(__name__)
@@ -191,7 +192,7 @@ async def run_server(host="127.0.0.1", port=502):
         await StartTcpServer(
             context=server_context,
             address=(host, port),
-            allow_reuse_address=True
+            reactor=reactor
         )
         
         logger.info(f"Server started on {host}:{port}")
