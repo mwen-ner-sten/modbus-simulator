@@ -2,31 +2,81 @@
 
 This project provides tools for simulating and testing Modbus TCP devices, including both a GUI application and CLI tools.
 
+## Requirements
+
+- Python 3.9 or later (tested with Python 3.13)
+- Virtual environment recommended
+
 ## Installation
 
-1. Create a virtual environment:
+### Development Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/modbus-simulator.git
+   cd modbus-simulator
+   ```
+
+2. Create a virtual environment:
    ```
    python -m venv venv
    ```
 
-2. Activate the virtual environment:
+3. Activate the virtual environment:
    - Windows: `.\venv\Scripts\activate`
    - Unix/macOS: `source venv/bin/activate`
 
-3. Install required packages:
+4. Install required packages:
    ```
    pip install -r requirements.txt
    ```
 
-## GUI Application
+### Package Installation
+
+You can also install the package directly:
+
+```
+pip install .
+```
+
+Or in development mode:
+
+```
+pip install -e .
+```
+
+## Project Structure
+
+```
+modbus_simulator/
+├── modbus_simulator/        # Main package
+│   ├── core/               # Core functionality
+│   ├── cli/                # Command line tools
+│   ├── gui/                # GUI components
+│   └── tests/              # Testing tools
+├── run_simulator.py        # Quick access script for GUI
+├── run_server.py           # Quick access script for server
+├── run_client.py           # Quick access script for client
+└── run_test.py             # Quick access script for tests
+```
+
+## Usage
+
+### GUI Application
 
 The GUI application includes a Modbus simulator and scanner:
 
 ```
-python main.py
+python run_simulator.py
 ```
 
-### Simulator Tab
+Or if installed as a package:
+
+```
+modbus-simulator
+```
+
+#### Simulator Tab
 
 - Configure server settings (host, port, register file)
 - Manage register values for different register types:
@@ -38,31 +88,43 @@ python main.py
 - Save and load register configurations
 - Start/stop the Modbus server
 
-### Scanner Tab
+#### Scanner Tab
 
 - Configure connection settings (host, port, unit ID)
 - Select function code (HR, IR, CO, DI)
 - Specify register address and count
 - Read values from a Modbus device
 
-## CLI Tools
+### CLI Tools
 
 The CLI tools provide a simpler, more direct way to test Modbus functionality:
 
-### Create Test Registers
+#### Create Test Registers
 
 Create a JSON file with test register values:
 
 ```
-python create_test_registers.py
+python run_create_registers.py
 ```
 
-### Server CLI
+Or if installed as a package:
+
+```
+modbus-create-registers
+```
+
+#### Server CLI
 
 Run a Modbus TCP server with register values from a file:
 
 ```
-python server_cli.py --file test_registers.json --port 502
+python run_server.py --file test_registers.json --port 502
+```
+
+Or if installed as a package:
+
+```
+modbus-server --file test_registers.json --port 502
 ```
 
 Options:
@@ -71,12 +133,18 @@ Options:
 - `--file`: JSON file containing register values (default: registers.json)
 - `--loglevel`: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
-### Client CLI
+#### Client CLI
 
 Read registers from a Modbus server:
 
 ```
-python client_cli.py --function hr --address 0 --count 5
+python run_client.py --function hr --address 0 --count 5
+```
+
+Or if installed as a package:
+
+```
+modbus-client --function hr --address 0 --count 5
 ```
 
 Options:
@@ -94,7 +162,13 @@ Options:
 Execute a complete test sequence:
 
 ```
-python test_modbus.py
+python run_test.py
+```
+
+Or if installed as a package:
+
+```
+modbus-test
 ```
 
 This will:
