@@ -13,7 +13,7 @@ setup(
     name="modbus-tools",
     version=__version__,
     author="Mike Wennersten",
-    author_email="mwen-ner-sten@github.com",
+    author_email="mike@wen-ner-sten.com",
     description="A Python-based Modbus simulator and testing toolkit",
     long_description=long_description,
     long_description_content_type="text/markdown",
