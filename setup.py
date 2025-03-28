@@ -12,8 +12,8 @@ with open("README.md", "r", encoding="utf-8") as f:
 setup(
     name="modbus-tools",
     version=__version__,
-    author="Modbus Tools Team",
-    author_email="example@example.com",
+    author="Mike Wennersten",
+    author_email="mwen-ner-sten@github.com",
     description="A Python-based Modbus simulator and testing toolkit",
     long_description=long_description,
     long_description_content_type="text/markdown",
