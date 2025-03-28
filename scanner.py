@@ -3,7 +3,6 @@ scanner.py - Modbus network scanner implementation
 """
 
 import logging
-import asyncio
 from typing import List, Dict, Any
 from PyQt5.QtWidgets import (
     QWidget,
@@ -17,57 +16,171 @@ from PyQt5.QtWidgets import (
     QHeaderView,
     QProgressBar,
     QMessageBox,
+    QComboBox,
 )
-from PyQt5.QtCore import Qt, QTimer, pyqtSlot
-from pymodbus.client import AsyncModbusTcpClient
+from PyQt5.QtCore import Qt, QTimer, pyqtSlot, QThread, pyqtSignal
+from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.exceptions import ModbusException
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
+
+
+class ScanThread(QThread):
+    """
+    Thread for reading Modbus registers
+    """
+    progress = pyqtSignal(int)
+    result_ready = pyqtSignal(str, str, str)
+    
+    def __init__(self, ip, port, slave_id, function_code, register_address, register_count):
+        super().__init__()
+        self.ip = ip
+        self.port = port
+        self.slave_id = slave_id
+        self.function_code = function_code
+        self.register_address = register_address
+        self.register_count = register_count
+        logger.debug(f"Initialized ScanThread with IP: {ip}, Port: {port}, Slave ID: {slave_id}")
+        
+    def run(self):
+        """
+        Run the read operation
+        """
+        try:
+            logger.info(f"Starting Modbus read operation for {self.ip}:{self.port}")
+            logger.debug(f"Parameters: Slave ID={self.slave_id}, Function={self.function_code}, "
+                        f"Address={self.register_address}, Count={self.register_count}")
+            
+            # Create client
+            client = ModbusTcpClient(self.ip, self.port)
+            logger.debug("Created ModbusTcpClient")
+            
+            try:
+                client.connect()
+                logger.debug("Connected to Modbus device")
+                
+                # Read registers based on function code
+                logger.debug(f"Attempting to read registers with function code: {self.function_code}")
+                if self.function_code == "Read Holding Registers":
+                    result = client.read_holding_registers(self.register_address, self.register_count, unit=self.slave_id)
+                elif self.function_code == "Read Input Registers":
+                    result = client.read_input_registers(self.register_address, self.register_count, unit=self.slave_id)
+                elif self.function_code == "Read Coils":
+                    result = client.read_coils(self.register_address, self.register_count, unit=self.slave_id)
+                elif self.function_code == "Read Discrete Inputs":
+                    result = client.read_discrete_inputs(self.register_address, self.register_count, unit=self.slave_id)
+                else:
+                    error_msg = f"Unsupported function code: {self.function_code}"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+                
+                if result and not result.isError():
+                    # Format the result
+                    if hasattr(result, 'registers'):
+                        values = [str(v) for v in result.registers]
+                        logger.debug(f"Read {len(values)} register values: {values}")
+                    elif hasattr(result, 'bits'):
+                        values = [str(v) for v in result.bits]
+                        logger.debug(f"Read {len(values)} bit values: {values}")
+                    else:
+                        values = [str(result)]
+                        logger.debug(f"Read single value: {values[0]}")
+                    
+                    self.result_ready.emit(
+                        f"Address {self.register_address}",
+                        f"Count: {self.register_count}",
+                        f"Values: {', '.join(values)}"
+                    )
+                    logger.info(f"Successfully read {len(values)} values from address {self.register_address}")
+                else:
+                    error_msg = "Failed to read registers"
+                    logger.error(error_msg)
+                    self.result_ready.emit(
+                        f"Address {self.register_address}",
+                        "Error",
+                        error_msg
+                    )
+                    
+            finally:
+                client.close()
+                logger.debug("Closed Modbus connection")
+                
+            self.progress.emit(100)
+            logger.info("Read operation completed successfully")
+                    
+        except Exception as e:
+            logger.error(f"Error during read operation: {str(e)}", exc_info=True)
+            self.result_ready.emit(
+                f"Address {self.register_address}",
+                "Error",
+                str(e)
+            )
+            self.progress.emit(100)
+
 
 class ModbusScanner(QWidget):
     """
-    Widget for scanning Modbus networks and discovering devices
+    Widget for reading Modbus registers
     """
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        logger.debug("Initializing ModbusScanner widget")
         self.init_ui()
         
     def init_ui(self):
         """
         Initialize the user interface
         """
+        logger.debug("Setting up ModbusScanner UI")
         layout = QVBoxLayout()
         
-        # Network range input
-        range_layout = QHBoxLayout()
-        range_layout.addWidget(QLabel("IP Range:"))
-        self.ip_start = QLineEdit("192.168.1.1")
-        self.ip_end = QLineEdit("192.168.1.254")
-        range_layout.addWidget(self.ip_start)
-        range_layout.addWidget(QLabel("to"))
-        range_layout.addWidget(self.ip_end)
-        layout.addLayout(range_layout)
+        # IP and Port input
+        connection_layout = QHBoxLayout()
+        connection_layout.addWidget(QLabel("IP Address:"))
+        self.ip_input = QLineEdit("127.0.0.1")
+        connection_layout.addWidget(self.ip_input)
         
-        # Port input
-        port_layout = QHBoxLayout()
-        port_layout.addWidget(QLabel("Port:"))
+        connection_layout.addWidget(QLabel("Port:"))
         self.port_input = QLineEdit("502")
-        port_layout.addWidget(self.port_input)
-        layout.addLayout(port_layout)
+        connection_layout.addWidget(self.port_input)
         
-        # Slave ID range
-        slave_layout = QHBoxLayout()
-        slave_layout.addWidget(QLabel("Slave ID Range:"))
-        self.slave_start = QLineEdit("1")
-        self.slave_end = QLineEdit("247")
-        slave_layout.addWidget(self.slave_start)
-        slave_layout.addWidget(QLabel("to"))
-        slave_layout.addWidget(self.slave_end)
-        layout.addLayout(slave_layout)
+        connection_layout.addWidget(QLabel("Slave ID:"))
+        self.slave_id = QLineEdit("1")
+        connection_layout.addWidget(self.slave_id)
         
-        # Scan button
-        self.scan_button = QPushButton("Start Scan")
-        self.scan_button.clicked.connect(self.start_scan)
-        layout.addWidget(self.scan_button)
+        layout.addLayout(connection_layout)
+        
+        # Function code selection
+        function_layout = QHBoxLayout()
+        function_layout.addWidget(QLabel("Function Code:"))
+        self.function_code = QComboBox()
+        self.function_code.addItems([
+            "Read Holding Registers",
+            "Read Input Registers",
+            "Read Coils",
+            "Read Discrete Inputs"
+        ])
+        function_layout.addWidget(self.function_code)
+        layout.addLayout(function_layout)
+        
+        # Register address and count
+        register_layout = QHBoxLayout()
+        register_layout.addWidget(QLabel("Register Address:"))
+        self.register_address = QLineEdit("0")
+        register_layout.addWidget(self.register_address)
+        
+        register_layout.addWidget(QLabel("Count:"))
+        self.register_count = QLineEdit("1")
+        register_layout.addWidget(self.register_count)
+        
+        layout.addLayout(register_layout)
+        
+        # Read button
+        self.read_button = QPushButton("Read Registers")
+        self.read_button.clicked.connect(self.start_read)
+        layout.addWidget(self.read_button)
         
         # Progress bar
         self.progress_bar = QProgressBar()
@@ -75,102 +188,96 @@ class ModbusScanner(QWidget):
         
         # Results table
         self.results_table = QTableWidget()
-        self.results_table.setColumnCount(4)
-        self.results_table.setHorizontalHeaderLabels(["IP Address", "Port", "Slave ID", "Status"])
+        self.results_table.setColumnCount(3)
+        self.results_table.setHorizontalHeaderLabels(["Register", "Count/Status", "Values"])
         self.results_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.results_table)
         
         self.setLayout(layout)
+        logger.debug("ModbusScanner UI setup complete")
         
     @pyqtSlot()
-    def start_scan(self):
+    def start_read(self):
         """
-        Start the network scan
+        Start reading registers
         """
         try:
+            logger.info("Starting read operation")
             # Validate inputs
-            ip_start = self.ip_start.text()
-            ip_end = self.ip_end.text()
+            ip = self.ip_input.text()
             port = int(self.port_input.text())
-            slave_start = int(self.slave_start.text())
-            slave_end = int(self.slave_end.text())
+            slave_id = int(self.slave_id.text())
+            register_address = int(self.register_address.text())
+            register_count = int(self.register_count.text())
             
-            if not (1 <= slave_start <= 247 and 1 <= slave_end <= 247 and slave_start <= slave_end):
-                QMessageBox.warning(self, "Invalid Input", "Slave ID range must be between 1 and 247")
+            logger.debug(f"Input validation: IP={ip}, Port={port}, Slave ID={slave_id}, "
+                        f"Address={register_address}, Count={register_count}")
+            
+            if not (1 <= slave_id <= 247):
+                error_msg = "Slave ID must be between 1 and 247"
+                logger.warning(error_msg)
+                QMessageBox.warning(self, "Invalid Input", error_msg)
+                return
+                
+            if register_address < 0:
+                error_msg = "Register address must be non-negative"
+                logger.warning(error_msg)
+                QMessageBox.warning(self, "Invalid Input", error_msg)
+                return
+                
+            if register_count < 1:
+                error_msg = "Count must be at least 1"
+                logger.warning(error_msg)
+                QMessageBox.warning(self, "Invalid Input", error_msg)
                 return
                 
             # Clear previous results
             self.results_table.setRowCount(0)
+            logger.debug("Cleared previous results")
             
-            # Disable scan button
-            self.scan_button.setEnabled(False)
+            # Disable read button
+            self.read_button.setEnabled(False)
+            logger.debug("Disabled read button")
             
-            # Start scanning
-            asyncio.create_task(self.scan_network(ip_start, ip_end, port, slave_start, slave_end))
+            # Start reading in a separate thread
+            self.scan_thread = ScanThread(
+                ip, port, slave_id,
+                self.function_code.currentText(),
+                register_address, register_count
+            )
+            self.scan_thread.progress.connect(self.update_progress)
+            self.scan_thread.result_ready.connect(self.add_result)
+            self.scan_thread.finished.connect(self.read_finished)
+            self.scan_thread.start()
+            logger.info("Started scan thread")
             
         except ValueError as e:
+            logger.error(f"Input validation error: {str(e)}")
             QMessageBox.warning(self, "Invalid Input", str(e))
-            self.scan_button.setEnabled(True)
+            self.read_button.setEnabled(True)
             
-    async def scan_network(self, ip_start: str, ip_end: str, port: int, slave_start: int, slave_end: int):
+    def update_progress(self, progress):
         """
-        Scan the network for Modbus devices
+        Update the progress bar
+        """
+        logger.debug(f"Updating progress: {progress}%")
+        self.progress_bar.setValue(progress)
         
-        Args:
-            ip_start: Starting IP address
-            ip_end: Ending IP address
-            port: Port to scan
-            slave_start: Starting slave ID
-            slave_end: Ending slave ID
+    def add_result(self, register, count, values):
         """
-        try:
-            # Convert IP addresses to integers for range calculation
-            start_parts = [int(x) for x in ip_start.split('.')]
-            end_parts = [int(x) for x in ip_end.split('.')]
-            
-            start_ip = sum(part << (24 - 8 * i) for i, part in enumerate(start_parts))
-            end_ip = sum(part << (24 - 8 * i) for i, part in enumerate(end_parts))
-            
-            total_ips = end_ip - start_ip + 1
-            total_slaves = slave_end - slave_start + 1
-            total_scans = total_ips * total_slaves
-            current_scan = 0
-            
-            for ip_int in range(start_ip, end_ip + 1):
-                ip = '.'.join(str((ip_int >> (24 - 8 * i)) & 0xFF) for i in range(4))
-                
-                for slave_id in range(slave_start, slave_end + 1):
-                    try:
-                        # Create client
-                        client = AsyncModbusTcpClient(ip, port)
-                        await client.connect()
-                        
-                        # Try to read holding registers
-                        result = await client.read_holding_registers(0, 1, slave_id=slave_id)
-                        
-                        if result and not result.isError():
-                            # Device found
-                            row = self.results_table.rowCount()
-                            self.results_table.insertRow(row)
-                            self.results_table.setItem(row, 0, QTableWidgetItem(ip))
-                            self.results_table.setItem(row, 1, QTableWidgetItem(str(port)))
-                            self.results_table.setItem(row, 2, QTableWidgetItem(str(slave_id)))
-                            self.results_table.setItem(row, 3, QTableWidgetItem("Found"))
-                            
-                    except Exception as e:
-                        logging.debug(f"Error scanning {ip}:{port} slave {slave_id}: {str(e)}")
-                        
-                    finally:
-                        await client.close()
-                        
-                    # Update progress
-                    current_scan += 1
-                    progress = int((current_scan / total_scans) * 100)
-                    self.progress_bar.setValue(progress)
-                    
-        except Exception as e:
-            QMessageBox.critical(self, "Scan Error", f"An error occurred during scanning: {str(e)}")
-            
-        finally:
-            self.scan_button.setEnabled(True)
-            self.progress_bar.setValue(100) 
+        Add a result to the results table
+        """
+        logger.debug(f"Adding result: Register={register}, Count={count}, Values={values}")
+        row = self.results_table.rowCount()
+        self.results_table.insertRow(row)
+        self.results_table.setItem(row, 0, QTableWidgetItem(register))
+        self.results_table.setItem(row, 1, QTableWidgetItem(count))
+        self.results_table.setItem(row, 2, QTableWidgetItem(values))
+        
+    def read_finished(self):
+        """
+        Called when the read operation is complete
+        """
+        logger.info("Read operation finished")
+        self.read_button.setEnabled(True)
+        self.progress_bar.setValue(100) 

@@ -7,7 +7,7 @@ This module launches the GUI application when the package is run directly.
 
 import sys
 from PyQt5.QtWidgets import QApplication
-from modbus_simulator.gui.ui import MainWindow
+from modbus_tools.gui.ui import MainWindow
 
 def main():
     """Run the Modbus Simulator GUI application."""

@@ -10,14 +10,14 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="modbus-simulator",
+    name="modbus-tools",
     version=__version__,
-    author="Modbus Simulator Team",
+    author="Modbus Tools Team",
     author_email="example@example.com",
     description="A Python-based Modbus simulator and testing toolkit",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/modbus-simulator",
+    url="https://github.com/mwen-ner-sten/modbus-tools",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

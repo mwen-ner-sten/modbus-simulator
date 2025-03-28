@@ -1,4 +1,4 @@
-# Modbus Simulator
+# Modbus Tools
 
 This project provides tools for simulating and testing Modbus TCP devices, including both a GUI application and CLI tools.
 
@@ -13,8 +13,8 @@ This project provides tools for simulating and testing Modbus TCP devices, inclu
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/modbus-simulator.git
-   cd modbus-simulator
+   git clone https://github.com/mwen-ner-sten/modbus-tools.git
+   cd modbus-tools
    ```
 
 2. Create a virtual environment:
@@ -48,16 +48,16 @@ pip install -e .
 ## Project Structure
 
 ```
-modbus_simulator/
-├── modbus_simulator/        # Main package
-│   ├── core/               # Core functionality
-│   ├── cli/                # Command line tools
-│   ├── gui/                # GUI components
-│   └── tests/              # Testing tools
-├── run_simulator.py        # Quick access script for GUI
-├── run_server.py           # Quick access script for server
-├── run_client.py           # Quick access script for client
-└── run_test.py             # Quick access script for tests
+modbus_tools/
+├── modbus_tools/           # Main package
+│   ├── core/              # Core functionality
+│   ├── cli/               # Command line tools
+│   ├── gui/               # GUI components
+│   └── tests/             # Testing tools
+├── run_simulator.py       # Quick access script for GUI
+├── run_server.py          # Quick access script for server
+├── run_client.py          # Quick access script for client
+└── run_test.py            # Quick access script for tests
 ```
 
 ## Usage
